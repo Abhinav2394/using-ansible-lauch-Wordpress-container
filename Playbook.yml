@@ -1,0 +1,43 @@
+---
+- name: Hosting a Wordpress website in a container
+  hosts: all
+  vars:    #below defined variable needs to be according to requirement                               
+       mysql_root_password: "ansible"        
+       wordpress_db_name: "abhinav" 
+       wordpress_db_user: "root"
+       wordpress_db_password: "ansible"
+  tasks:         
+     - name: creating bridge network       #Network is created with bridge driver and network ip used here is 172.19.0.0 and gateway 172.19.0.1, so possible ip assigned to container will be 172.19.0.2 - 172.19.255.254
+       community.docker.docker_network:
+                name: wordpress_network
+                state: present
+                driver: bridge
+                ipam_config:
+                     - subnet: "172.19.0.0/16"
+                       gateway: "172.19.0.1"
+
+    - name: launch mysql container        #lauching mysql container using newly created network and giving the neccessary environment variable
+      community.docker.docker_container:
+                name: mysql
+                image: mysql:latest
+                networks:
+                     - name: wordpress_network
+                       env:
+                          MYSQL_ROOT_PASSWORD: "{{ mysql_root_password }}"
+                          MYSQL_DATABASE: "{{ wordpress_db_name }}"
+                state: started
+
+    - name: launch wordpress container     #lauching wordpress container using newly created network and giving first ip of the range as 'WORDPRESS_DB_HOST= value' ip of database
+      community.docker.docker_container:
+                name: wordpress
+                image: wordpress:latest
+                networks:
+                     - name: wordpress_network
+                       env:
+                          WORDPRESS_DB_HOST: 172.19.0.2
+                          WORDPRESS_DB_NAME: "{{ wordpress_db_name }}"
+                          WORDPRESS_DB_USER: "{{ wordpress_db_user }}"
+                          WORDPRESS_DB_PASSWORD: "{{ wordpress_db_password }}"
+                ports:
+                     - "80:80"
+                state: started
