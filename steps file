@@ -1,0 +1,4 @@
+* Considering ansible is installed on master node and cluster setup is completed and Docker-ce is installed on all managed host.
+Run a yml playbook (available in this repository) to complete the task
+   command "ansible-playbook project1.yml"
+check the Wordpress webserver with IP on browser
